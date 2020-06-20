@@ -30,7 +30,7 @@ class ExposureController extends Controller
 
         $url = "https://basketball.exposureevents.com/api/v1/games?eventid=" . $event_id;
 
-        dd($url, $headers);
+        // dd($url, $headers);
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
