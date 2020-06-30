@@ -90,7 +90,7 @@ class ExposureController extends Controller
         return $games;
     }
 
-    public function playoffGames(Request $request, int $event_id)
+    public function playoffGames(Request $request, int $event_id, int $chunk)
     {
         $games = $this->getEventGames($event_id);
         $games = $this->getPlayoffGames($games);
@@ -100,11 +100,11 @@ class ExposureController extends Controller
         $games = $this->orderGamesByNumber($games);
 
         // Each playoff has 3, 4 team brackets
-        // the param $request->bracket is used to
+        // the param $chunk is used to
         // query 1 of the 3 4 team brackets
-        if ($request->bracket) {
+        if ($chunk) {
             $games = array_chunk($games, 3);
-            $games = $games[$request->bracket - 1];
+            $games = $games[$chunk - 1];
         }
 
         return $games;

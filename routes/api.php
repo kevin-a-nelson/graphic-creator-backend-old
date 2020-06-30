@@ -19,4 +19,4 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 Route::get("/test", "API\ExposureController@test");
-Route::get("/exposure/events/{event_id}/games/playoffs", "API\ExposureController@playoffGames");
+Route::get("/exposure/events/{event_id}/games/playoffs/chunks/{chunk}", "API\ExposureController@playoffGames");
