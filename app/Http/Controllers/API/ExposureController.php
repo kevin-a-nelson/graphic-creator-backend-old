@@ -7,13 +7,17 @@ use Illuminate\Http\Request;
 
 class ExposureController extends Controller
 {
-    public function getEventGames($event_id)
+
+    public function fetchEventFromExposure($event_id)
     {
         $api_key = config('app.exposure_api_key');
+
+        // Create timestamp
         $datetime = new \DateTime();
         $datetime->setTimezone(new \DateTimeZone('UTC'));
         $timestamp = $datetime->format('Y-m-d\TH:i:s.u\Z');
 
+        // Create hashString
         $path = $api_key . '&get&' . $timestamp . '&/api/v1/games';
         $message = strtoupper($path);
         $secret_key = config('app.exposure_secret_key');
@@ -30,24 +34,110 @@ class ExposureController extends Controller
 
         $url = "https://basketball.exposureevents.com/api/v1/games?eventid=" . $event_id;
 
-        // dd($url, $headers);
-
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_TIMEOUT, 3);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-        $games = trim(curl_exec($ch));
+        $event = trim(curl_exec($ch));
+        $event = json_decode($event);
 
-        $games = json_decode($games);
+        return $event;
 
-        return $games->Games->Results;
     }
 
-    public function games(Request $request, $event_id)
+    public function getDivisionNames($event)
     {
-        return $this->getEventGames($event_id);
+        $games = $event->Games->Results;
+        $divisionNames = [];
+        foreach ($games as $game) {
+            $pool = $game->Division->Name;
+            $divisionNames[$pool] = true;
+        }
+        return array_keys($divisionNames);
+    }
+
+    public function getPools($event, $divisionName)
+    {
+        $pools = [];
+        $games = $event->Games->Results;
+        foreach ($games as $game) {
+
+            if ($divisionName != $game->Division->Name) {
+                continue;
+            }
+
+            // Home Team
+            $poolName = $game->HomeTeam->PoolName;
+
+            if (!array_key_exists($poolName, $pools)) {
+                $pools[$poolName] = [];
+            }
+
+            if (!in_array($game->HomeTeam->Name, $pools[$poolName])) {
+                array_push($pools[$poolName], $game->HomeTeam->Name);
+            }
+
+            // Away Team
+            $poolName = $game->AwayTeam->PoolName;
+
+            if (!array_key_exists($poolName, $pools)) {
+                $pools[$poolName] = [];
+            }
+
+            if (!in_array($game->AwayTeam->Name, $pools[$poolName])) {
+                array_push($pools[$poolName], $game->AwayTeam->Name);
+            }
+        }
+        ksort($pools);
+        return $pools;
+    }
+
+    public function getPoolNames($event, $divisionName)
+    {
+        $games = $event->Games->Results;
+        $poolNames = [];
+        foreach ($games as $game) {
+            if ($game->Division->Name == $divisionName) {
+                $poolNames[$game->HomeTeam->PoolName] = true;
+                $poolNames[$game->AwayTeam->PoolName] = true;
+            }
+        }
+        $poolNames = array_keys($poolNames);
+        sort($poolNames);
+        return $poolNames;
+    }
+
+    public function getDivisions($event)
+    {
+        $divisionNames = $this->getDivisionNames($event);
+        $games = $event->Games->Results;
+        $divisions = [];
+        foreach ($divisionNames as $divisionName) {
+            $pools = $this->getPools($event, $divisionName);
+            $divisions[$divisionName] = ["Pools" => $pools];
+        }
+        ksort($divisions);
+        return $divisions;
+    }
+
+    public function getEvent($event_id)
+    {
+        $event = $this->fetchEventFromExposure($event_id);
+        $eventName = $event->Games->Results[0]->Division->Event->Name;
+        $divisions = $this->getDivisions($event);
+        return [
+            "Name" => $eventName,
+            "Divisions" => $divisions,
+        ];
+    }
+
+    public function formattedEvent($event_id)
+    {
+        $event = $this->getEventGames($event_id);
+        $eventGames = $event->Games->Results;
+        return $eventGames;
     }
 
     public function getPlayoffGames($games)
@@ -90,14 +180,19 @@ class ExposureController extends Controller
         return $games;
     }
 
-    public function playoffGames(Request $request, int $event_id, int $chunk)
+    public function playoffGames(Request $request, int $event_id, int $chunk = -1)
     {
         $games = $this->getEventGames($event_id);
         $games = $this->getPlayoffGames($games);
 
+        dd($games);
         // Each game has a number attribute
         // The Number tells us where the game is within a bracket
         $games = $this->orderGamesByNumber($games);
+
+        if ($chunk == -1) {
+            return $games;
+        }
 
         // Each playoff has 3, 4 team brackets
         // the param $chunk is used to
