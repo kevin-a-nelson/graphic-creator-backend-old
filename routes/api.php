@@ -26,6 +26,3 @@ Route::get("/test", "API\ExposureController@test");
 // 16U = 446801
 // 17U = 424377
 Route::get("/exposure/events/{event_id}", "API\ExposureController@getEvent");
-Route::get("/exposure/events/{event_id}/division/{division_id}/pools", "API\ExposureController@getPools");
-Route::get("/exposure/events/{event_id}/games/playoffs", "API\ExposureController@playoffGames");
-Route::get("/exposure/events/{event_id}/games/playoffs/chunks/{chunk}", "API\ExposureController@playoffGames");

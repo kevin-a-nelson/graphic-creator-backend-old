@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 
 class ExposureController extends Controller
 {
@@ -58,7 +57,105 @@ class ExposureController extends Controller
         return array_keys($divisionNames);
     }
 
-    public function getPools($event, $divisionName)
+    public function abbrTeamName($teamName)
+    {
+        $teamName = str_replace("Basketball", "BBall", $teamName);
+        $teamName = str_replace("17U", "", $teamName);
+        $teamName = str_replace("16U", "", $teamName);
+        $teamName = str_replace("13U", "", $teamName);
+        $teamName = str_replace("12U", "", $teamName);
+        $teamName = str_replace("Alabama", "AL", $teamName);
+        $teamName = str_replace("Alaska", "AK", $teamName);
+        $teamName = str_replace("American Samoa", "AS", $teamName);
+        $teamName = str_replace("Arizona", "AZ", $teamName);
+        $teamName = str_replace("Arkansas", "AR", $teamName);
+        $teamName = str_replace("California", "CA", $teamName);
+        $teamName = str_replace("Colorado", "CO", $teamName);
+        $teamName = str_replace("Connecticut", "CT", $teamName);
+        $teamName = str_replace("Delaware", "DE", $teamName);
+        $teamName = str_replace("Dist. of Columbia", "DC", $teamName);
+        $teamName = str_replace("Florida", "FL", $teamName);
+        $teamName = str_replace("Georgia", "GA", $teamName);
+        $teamName = str_replace("Guam", "GU", $teamName);
+        $teamName = str_replace("Hawaii", "HI", $teamName);
+        $teamName = str_replace("Idaho", "ID", $teamName);
+        $teamName = str_replace("Illinois", "IL", $teamName);
+        $teamName = str_replace("Indiana", "IN", $teamName);
+        $teamName = str_replace("Iowa", "IA", $teamName);
+        $teamName = str_replace("Kansas", "KS", $teamName);
+        $teamName = str_replace("Kentucky", "KY", $teamName);
+        $teamName = str_replace("Louisiana", "LA", $teamName);
+        $teamName = str_replace("Maine", "ME", $teamName);
+        $teamName = str_replace("Maryland", "MD", $teamName);
+        $teamName = str_replace("Marshall Islands", "MH", $teamName);
+        $teamName = str_replace("Massachusetts", "MA", $teamName);
+        $teamName = str_replace("Michigan", "MI", $teamName);
+        $teamName = str_replace("Micronesia", "FM", $teamName);
+        $teamName = str_replace("Minnesota", "MN", $teamName);
+        $teamName = str_replace("Mississippi", "MS", $teamName);
+        $teamName = str_replace("Missouri", "MO", $teamName);
+        $teamName = str_replace("Montana", "MT", $teamName);
+        $teamName = str_replace("Nebraska", "NE", $teamName);
+        $teamName = str_replace("New Hampshire", "NH", $teamName);
+        $teamName = str_replace("New Jersey", "NJ", $teamName);
+        $teamName = str_replace("New Mexico", "NM", $teamName);
+        $teamName = str_replace("New York", "NY", $teamName);
+        $teamName = str_replace("North Carolina", "NC", $teamName);
+        $teamName = str_replace("North Dakota", "ND", $teamName);
+        $teamName = str_replace("Northern Marianas", "MP", $teamName);
+        $teamName = str_replace("Ohio", "OH", $teamName);
+        $teamName = str_replace("Oklahoma", "OK", $teamName);
+        $teamName = str_replace("Oregon", "OR", $teamName);
+        $teamName = str_replace("Palau", "PW", $teamName);
+        $teamName = str_replace("Pennsylvania", "PA", $teamName);
+        $teamName = str_replace("Puerto Rico", "PR", $teamName);
+        $teamName = str_replace("Rhode Island", "RI", $teamName);
+        $teamName = str_replace("South Carolina", "SC", $teamName);
+        $teamName = str_replace("South Dakota", "SD", $teamName);
+        $teamName = str_replace("Tennessee", "TN", $teamName);
+        $teamName = str_replace("Texas", "TX", $teamName);
+        $teamName = str_replace("Utah", "UT", $teamName);
+        $teamName = str_replace("Vermont", "VT", $teamName);
+        $teamName = str_replace("Virginia", "VA", $teamName);
+        $teamName = str_replace("Virgin Islands", "VI", $teamName);
+        $teamName = str_replace("Washington", "WA", $teamName);
+        $teamName = str_replace("West Virginia", "WV", $teamName);
+        $teamName = str_replace("Wisconsin", "WI", $teamName);
+        $teamName = str_replace("Wyoming", "WY", $teamName);
+        return $teamName;
+    }
+
+    public function getTeamRecords($event)
+    {
+        $games = $event->Games->Results;
+        $teams = [];
+        foreach ($games as $game) {
+            if (!array_key_exists($game->HomeTeam->TeamId, $teams)) {
+                $teams[$game->HomeTeam->TeamId] = [
+                    "Name" => $this->abbrTeamName($game->HomeTeam->Name),
+                    "Wins" => 0,
+                    "Loses" => 0,
+                ];
+            }
+            if (!array_key_exists($game->AwayTeam->Name, $teams)) {
+                $teams[$game->AwayTeam->TeamId] = [
+                    "Name" => $this->abbrTeamName($game->AwayTeam->Name),
+                    "Wins" => 0,
+                    "Loses" => 0,
+                ];
+            }
+            if ($game->HomeTeam->Score > $game->AwayTeam->Score) {
+                $teams[$game->HomeTeam->TeamId]["Wins"] += 1;
+                $teams[$game->AwayTeam->TeamId]["Loses"] += 1;
+            } elseif ($game->HomeTeam->Score > $game->AwayTeam->Score) {
+                $teams[$game->HomeTeam->TeamId]["Loses"] += 1;
+                $teams[$game->AwayTeam->TeamId]["Wins"] += 1;
+            }
+        }
+        return $teams;
+    }
+
+    public function getPools($event, $divisionName, $teamRecords)
     {
         $pools = [];
         $games = $event->Games->Results;
@@ -75,8 +172,8 @@ class ExposureController extends Controller
                 $pools[$poolName] = [];
             }
 
-            if (!in_array($game->HomeTeam->Name, $pools[$poolName])) {
-                array_push($pools[$poolName], $game->HomeTeam->Name);
+            if (!in_array($teamRecords[$game->HomeTeam->TeamId], $pools[$poolName])) {
+                array_push($pools[$poolName], $teamRecords[$game->HomeTeam->TeamId]);
             }
 
             // Away Team
@@ -86,36 +183,27 @@ class ExposureController extends Controller
                 $pools[$poolName] = [];
             }
 
-            if (!in_array($game->AwayTeam->Name, $pools[$poolName])) {
-                array_push($pools[$poolName], $game->AwayTeam->Name);
+            if (!in_array($teamRecords[$game->AwayTeam->TeamId], $pools[$poolName])) {
+                array_push($pools[$poolName], $teamRecords[$game->AwayTeam->TeamId]);
             }
         }
         ksort($pools);
-        return $pools;
-    }
-
-    public function getPoolNames($event, $divisionName)
-    {
-        $games = $event->Games->Results;
-        $poolNames = [];
-        foreach ($games as $game) {
-            if ($game->Division->Name == $divisionName) {
-                $poolNames[$game->HomeTeam->PoolName] = true;
-                $poolNames[$game->AwayTeam->PoolName] = true;
-            }
+        foreach ($pools as $pool => $teams) {
+            usort($pools[$pool], function ($a, $b) {
+                return $a["Wins"] < $b["Wins"];
+            });
         }
-        $poolNames = array_keys($poolNames);
-        sort($poolNames);
-        return $poolNames;
+        return $pools;
     }
 
     public function getDivisions($event)
     {
         $divisionNames = $this->getDivisionNames($event);
+        $teamRecords = $this->getTeamRecords($event);
         $games = $event->Games->Results;
         $divisions = [];
         foreach ($divisionNames as $divisionName) {
-            $pools = $this->getPools($event, $divisionName);
+            $pools = $this->getPools($event, $divisionName, $teamRecords);
             $divisions[$divisionName] = ["Pools" => $pools];
         }
         ksort($divisions);
@@ -131,78 +219,6 @@ class ExposureController extends Controller
             "Name" => $eventName,
             "Divisions" => $divisions,
         ];
-    }
-
-    public function formattedEvent($event_id)
-    {
-        $event = $this->getEventGames($event_id);
-        $eventGames = $event->Games->Results;
-        return $eventGames;
-    }
-
-    public function getPlayoffGames($games)
-    {
-        $isPlayoffGame = function ($team) {
-
-            // If Home and Away teams both don't have ExternalBracketId's then it is not a playoff game
-            if ((!property_exists($team->HomeTeam, 'ExternalBracketId') &&
-                (!property_exists($team->AwayTeam, 'ExternalBracketId')))) {
-                return false;
-            }
-
-            // If ExternalId of HomeTeam is < 1 it is a losers bracket game and not a playoff game
-            if ((property_exists($team->HomeTeam, 'ExternalBracketId')) &&
-                ($team->HomeTeam->ExternalBracketId < 1)) {
-                return false;
-            }
-
-            // If ExternalId of Away is < 1 it it is a losers bracket game and not a playoff game
-            if ((property_exists($team->AwayTeam, 'ExternalBracketId')) &&
-                ($team->AwayTeam->ExternalBracketId < 1)) {
-                return false;
-            }
-
-            return true;
-        };
-
-        return array_filter($games, $isPlayoffGame);
-    }
-
-    public function orderGamesByNumber($games)
-    {
-        // Number is the order in which the games are played
-        $externalIdAsc = function ($game1, $game2) {
-            return $game1->Number > $game2->Number;
-        };
-
-        usort($games, $externalIdAsc);
-
-        return $games;
-    }
-
-    public function playoffGames(Request $request, int $event_id, int $chunk = -1)
-    {
-        $games = $this->getEventGames($event_id);
-        $games = $this->getPlayoffGames($games);
-
-        dd($games);
-        // Each game has a number attribute
-        // The Number tells us where the game is within a bracket
-        $games = $this->orderGamesByNumber($games);
-
-        if ($chunk == -1) {
-            return $games;
-        }
-
-        // Each playoff has 3, 4 team brackets
-        // the param $chunk is used to
-        // query 1 of the 3 4 team brackets
-        if ($chunk) {
-            $games = array_chunk($games, 3);
-            $games = $games[$chunk - 1];
-        }
-
-        return $games;
     }
 
 }
