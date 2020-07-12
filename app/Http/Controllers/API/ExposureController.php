@@ -3,9 +3,23 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use Nesk\Puphpeteer\Puppeteer;
 
 class ExposureController extends Controller
 {
+
+    public function screenShot()
+    {
+        $puppeteer = new Puppeteer;
+        $browser = $puppeteer->launch();
+        $page = $browser->newPage();
+        $page->goto('https://example.com');
+        $imageString = $page->screenshot(['encoding' => 'base64']);
+        $browser->close();
+        return [
+            "ImageString" => $imageString,
+        ];
+    }
 
     public function fetchEventFromExposure($event_id)
     {
@@ -60,10 +74,23 @@ class ExposureController extends Controller
     public function abbrTeamName($teamName)
     {
         $teamName = str_replace("Basketball", "BBall", $teamName);
+        $teamName = str_replace("Academy", "ACAD", $teamName);
         $teamName = str_replace("17U", "", $teamName);
         $teamName = str_replace("16U", "", $teamName);
+        $teamName = str_replace("15U", "", $teamName);
+        $teamName = str_replace("14U", "", $teamName);
         $teamName = str_replace("13U", "", $teamName);
         $teamName = str_replace("12U", "", $teamName);
+        $teamName = str_replace("11U", "", $teamName);
+        $teamName = str_replace("10U", "", $teamName);
+        $teamName = str_replace("17u", "", $teamName);
+        $teamName = str_replace("15u", "", $teamName);
+        $teamName = str_replace("16u", "", $teamName);
+        $teamName = str_replace("14u", "", $teamName);
+        $teamName = str_replace("13u", "", $teamName);
+        $teamName = str_replace("12u", "", $teamName);
+        $teamName = str_replace("11u", "", $teamName);
+        $teamName = str_replace("10u", "", $teamName);
         $teamName = str_replace("Alabama", "AL", $teamName);
         $teamName = str_replace("Alaska", "AK", $teamName);
         $teamName = str_replace("American Samoa", "AS", $teamName);
@@ -147,7 +174,7 @@ class ExposureController extends Controller
             if ($game->HomeTeam->Score > $game->AwayTeam->Score) {
                 $teams[$game->HomeTeam->TeamId]["Wins"] += 1;
                 $teams[$game->AwayTeam->TeamId]["Loses"] += 1;
-            } elseif ($game->HomeTeam->Score > $game->AwayTeam->Score) {
+            } elseif ($game->HomeTeam->Score < $game->AwayTeam->Score) {
                 $teams[$game->HomeTeam->TeamId]["Loses"] += 1;
                 $teams[$game->AwayTeam->TeamId]["Wins"] += 1;
             }
