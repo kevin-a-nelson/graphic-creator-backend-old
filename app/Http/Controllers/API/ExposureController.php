@@ -3,18 +3,30 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Nesk\Puphpeteer\Puppeteer;
 
 class ExposureController extends Controller
 {
 
-    public function screenShot()
+    public function screenShot(Request $request)
     {
+        $url = $request->input('url');
+        $url = "http://localhost:3000?event={$request->input('text')}&display={$request->input('display')}";
         $puppeteer = new Puppeteer;
-        $browser = $puppeteer->launch();
+        $browser = $puppeteer->launch(["defaultViewport" => ['width' => 1300, 'height' => 512]]);
         $page = $browser->newPage();
-        $page->goto('https://example.com');
-        $imageString = $page->screenshot(['encoding' => 'base64']);
+        $page->goto($url);
+        $imageString = $page->screenshot([
+            'encoding' => 'base64',
+            'type' => 'png',
+            'clip' => [
+                'x' => 266,
+                'y' => 0,
+                'width' => 1024,
+                'height' => 512,
+            ],
+        ]);
         $browser->close();
         return [
             "ImageString" => $imageString,
