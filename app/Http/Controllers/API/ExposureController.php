@@ -11,7 +11,8 @@ class ExposureController extends Controller
 
     public function screenShot(Request $request)
     {
-        $graphicCreatorUrl = "http://prepnetworkbrackets.surge.sh/";
+        // $graphicCreatorUrl = "http://prepnetworkbrackets.surge.sh/";
+        $graphicCreatorUrl = "http://localhost:3000/";
         $url = "{$graphicCreatorUrl}?event={$request->input('text')}&display={$request->input('display')}";
         $puppeteer = new Puppeteer;
         $browser = $puppeteer->launch(["defaultViewport" => ['width' => 1300, 'height' => 512]]);
